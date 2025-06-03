@@ -12,6 +12,14 @@ Czyli for(int i = beg; i<end; i++) NIEPOPRAWNE (CHYBA, ŻE OSTATNI ARGUMENT MA
 SPECYFICZNE ZNACZENIE)!!!
 for(int i = beg; i<=end; i++) POPRAWNE!!!
 */
+
+std::string debugArg(Ast potArg) {
+  if (auto *arg = std::get_if<std::string>(&potArg->value)) {
+    return *arg;
+  }
+    return "Parser error";
+}
+
 bool bindingCompare(std::shared_ptr<Token> tkn1, std::shared_ptr<Token> tkn2){
     if(tkn1->givePriority()!= tkn2->givePriority()){
         return tkn2->givePriority()>tkn1->givePriority();
@@ -57,7 +65,9 @@ Ast Parser::parseCommand(const std::vector<std::shared_ptr<Token>>& tokens, int 
                 newCommand.flags.push_back(tokens[i]->giveTokenValue());
                 break;
             case Tokens::ARG: {
-                newCommand.args.push_back(tokens[i]->giveTokenValue());
+                std::string argContent = tokens[i]->giveTokenValue();
+                Ast newArgAst = std::make_shared<struct AstNode>(NodeType::Arg, argContent);
+                newCommand.args.push_back(newArgAst);
                 break;
             }
             default:
@@ -85,8 +95,8 @@ void debugCommand(Ast command){
             std::cout << ", "<< flag;
         }
         std::cout << "Arguments: ";
-        for(std::string arg : cmd->args){
-            std::cout << ", "<< arg;
+        for(Ast arg : cmd->args){
+            std::cout << ", "<< debugArg(arg);
         }
         std::cout << ">\n";
     }

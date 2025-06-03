@@ -20,7 +20,7 @@ enum class NodeType {
 struct commandLineStruct {
     std::string cmdname;
     std::vector<std::string> flags;
-    std::vector<std::string> args;
+    std::vector<Ast> args;
 };
 
 struct pipeStruct {
