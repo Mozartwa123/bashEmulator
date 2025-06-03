@@ -1,0 +1,26 @@
+Temat projektu: Zaprojektuję zabawkowy emulator basha połączony ze sprawdzaniem bezpieczeństwa skryptów sh, co może być 
+użyteczne w przypadku PKGBUILDów, które mogą zawierać złośliwe polecenia. Będą możliwe podstawowe czynności jak tworzenie 
+katalogów i plików i przechodzenie po katalogach.
+
+Klasy:
+
+Katalog - zawierać będzie nazwę katalogu, listę plików w nim zawartych. Oczywiście nazwa będzie zawierać pełną ścieżkę do niego, np. mkdir Dokumenty w katalogu domowym nie utworzy katalogu Dokumenty, tylko /home/usr_name/Dokumenty. Zadbam również
+o metodę statyczną, która uniemożliwia stworzenie duplikatów (w takim sensie, że /home/usr_name/Dokumenty nie będzie można zduplikować, ale będzie można utworzyć np. katalog /home/usr/Dokumenty/Dokumenty). Zawierać może pole IsScriptDirectory, jeżeli jest prawdą, to operacja rm -rf tenże_katalog nie będzie zabroniona (bo może być to element sprzątania skryptu po sobie, np. może usunąć folder z repozytorium gita, co zaoszczędzi miejsce na dysku), ale śmiertelnie niebezpieczna operacja rm -rf / nie będzie możliwa bo katalog / nie jest skryptowy. 
+
+Plik - klasa analogiczna do klasy Katalog. Rozważę stworzenie abstrakcyjnej nadklasy Data_type, której pola będą dziedziczone przez Plik i Katalog.
+
+Emulator - będzie odpowiedzialny za emulację skryptów oraz informowanie o ewentualnych zagrożeniach.
+
+Lexer - przyjmować będzie teksty poleceń i wymuszał ich wykonanie na emulatorze.
+
+Command - będzie to klasa abstrakcyjna stanowiąca wzorzec dla różnych poleceń (mechanizm dziedziczenia), zawierająca pola informacje o komendzie, jej bezpieczeństwo w zależności od flag (pola enum Class SavetyLevel) oraz metodę execute, która dla przyjętego jako argument Emulatora zaprezentuje swoje działanie.
+
+Przykładowe podklasy Command:
+Dd (kopiowanie bajtów z jednej lokalizacji do drugiej, która potencjalnie może być destrukcyjna),
+Cd (wchodzenie do katalogów), MkDir (tworzenie katalogów), Echo (wypisywanie na ekran) - tyle na razie mam, ale będzie o wiele więcej.
+
+Język programowania: c++
+
+Biblioteki: ImGui
+
+Planuję dodać do projektu skrypt sh, który umożliwi pobranie wszystkich wymaganych zależności (zrobię osobne skrypty dla dystrybucji bazujących na debianie i na archlinux), a także doda alias w .bashrc, dzięki któremu uda się odpalić program za pomocą terminalowej komendy.

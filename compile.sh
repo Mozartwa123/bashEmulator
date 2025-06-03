@@ -1,0 +1,1 @@
+g++ computer.cpp commandline.cpp tokenizer.cpp
