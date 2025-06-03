@@ -1,5 +1,6 @@
 #include "Parser.hpp"
 #include "tokenizer.hpp"
+#include "error.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <cstdio>
@@ -241,7 +242,7 @@ string cd(vector<string> flags, vector<string> arguments,
   int argsize = arguments[0].size();
   if (arguments[0] == ".") {
     fprintf(stdout, "entering directory %s \n",
-            computer->currentDirectory->giveObjName().c_str());
+            computer->currentDirectory->giveObjName().c_str());//zmienię to na logi, ale nie teraz, błagam!
     return computer->currentDirectory
         ->giveObjName(); // przechodzimy do tego samego katalogu
   } else if (arguments[0] == "..") {
@@ -301,7 +302,7 @@ string cd(vector<string> flags, vector<string> arguments,
 
 string clear(vector<string> flags, vector<string> arguments,
              shared_ptr<Computer> computer, shared_ptr<Command> command) {
-  cout << "\033[2J\033[1;1H";
+  //cout << "\033[2J\033[1;1H";
   return "\033[2J\033[1;1H";
 }
 
@@ -355,7 +356,7 @@ string fastfetch(vector<string> flags, vector<string> arguments,
            << '\n';
   }
 
-  cout << output.str();
+  //cout << output.str();
   return output.str();
 }
 
@@ -365,8 +366,8 @@ string pwd(vector<string> flags, vector<string> arguments,
     fprintf(stderr, "To many arguments %s \n", command->description.c_str());
     // range_error("To many arguments " + command->description + "\n");
   }
-  fprintf(stdout, "Current directory %s \n",
-          computer->currentDirectory->givePath().c_str());
+  //fprintf(stdout, "Current directory %s \n",
+          //computer->currentDirectory->givePath().c_str());
   return computer->currentDirectory->givePath().c_str();
 }
 
@@ -398,6 +399,8 @@ string listRec(shared_ptr<MyDirectory> listedDir, vector<string> flags,
     }
   }
   // output << RESET;
+  output << "\n";
+  output << RESET;
   string result = output.str();
   // cout << result;
   // putchar('\n');
@@ -418,7 +421,7 @@ string ls(vector<string> flags, vector<string> arguments,
   ostringstream output;
   string result = listRec(listedDir, flags, output);
   result += "\n";
-  cout << result;
+  //cout << result;
   cout << RESET;
   return result;
 }
@@ -449,9 +452,9 @@ public:
   string evalArg(Ast potArg);
   Ast syntaxConverting(string input) {
     vector<shared_ptr<Token>> lexed = lexer->lexing(input);
-    debugLexer(lexed);
+    //debugLexer(lexed);
     Ast parsed = parser->initParsing(lexed);
-    debugParsing(parser->initParsing(lexer->lexing(input)));
+    //debugParsing(parser->initParsing(lexer->lexing(input)));
     return parsed;
   }
   string evalCmd(string cmdname, vector<Ast> &args, vector<string> &flags) {
@@ -468,11 +471,20 @@ public:
     }
     vector<string> evaluatedArgs = {};
     for(Ast potArg : args){
+        if(potArg == nullptr){
+            cerr<<"Empty argument\n";
+            continue; //kontrowersyjne, nie wiem, czemu to robię, ale to nietrudno zmienić ewentualnie...
+        }
         evaluatedArgs.push_back(evalArg(potArg));
     }
     return cmd->execute(flags, evaluatedArgs, this->computer, cmd);
   }
   string evalFromAst(Ast cmdLine, vector<string> pipeStack) {
+    if(cmdLine == nullptr){
+        cerr<<"Nullptr during evaluation\n";
+        updateErrorMessage("Parser failed");
+        return clearErrorMessage();
+    }
     switch (cmdLine->type) {
     case NodeType::Command:
       if (auto *cmd = std::get_if<commandLineStruct>(&cmdLine->value)) {
@@ -496,21 +508,26 @@ public:
       }
     }
     default:
-      cerr << "Yet not implemented...";
-      return "";
+      cerr << "Yet not implemented...\n";
+      return clearErrorMessage();
     }
   }
   string eval(string input) { return evalFromAst(syntaxConverting(input), {}); }
 };
 
 string Interpreter::evalArg(Ast potArg) {
+  if (potArg == nullptr){
+    cerr<<"Empty argument\n";
+    return "Empty argument";
+  }
   if (potArg->type != NodeType::Arg) {
     return this->evalFromAst(potArg, {}); // rekurencja ogonowa
   }
   if (auto *arg = std::get_if<string>(&potArg->value)) {
     return *arg;
   }
-    return "Interpreter error";
+    updateErrorMessage("Interpreter error");
+    return clearErrorMessage();
 }
 
 class Console {
@@ -550,7 +567,9 @@ private:
       return;
     }
     // if(n == "") bashSession();
-    interpreter->eval(n);
+    string message = interpreter->eval(n);
+    cout<<message;
+    cout << RESET;
     bashSession();
   }
 };
@@ -560,15 +579,19 @@ vector<shared_ptr<MyDirectory>> Computer::allDirectories = {};
 vector<shared_ptr<MyDirectory>> Computer::allFiles = {};
 
 int main(void) {
+
   shared_ptr<Console> newSession = make_shared<Console>();
   newSession->bashSessionInit();
+
   /*
   shared_ptr<Computer> cmp = make_shared<Computer>("a", "b");
   shared_ptr<Interpreter> intrp = make_shared<Interpreter>(cmp);
   intrp->eval("cd ..");
   */
+  /*
   shared_ptr<Parser> prs = make_shared<Parser>();
   shared_ptr<Lexer> lx = make_shared<Lexer>();
   string input = "cd -fff  --fgh ..";
   debugParsing(prs->initParsing(lx->lexing(input)));
+  */
 }

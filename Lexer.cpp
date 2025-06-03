@@ -1,5 +1,6 @@
 //Lexer.cpp
 #include "Lexer.hpp"
+#include "error.hpp"
 #include "tokenizer.hpp"
 #include <optional>
 #include <ostream>

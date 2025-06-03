@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include "Parser.hpp"
+#include "error.hpp"
 
 /*
 Uwaga na oznaczenia beg i end:
@@ -12,15 +13,23 @@ Czyli for(int i = beg; i<end; i++) NIEPOPRAWNE (CHYBA, ŻE OSTATNI ARGUMENT MA
 SPECYFICZNE ZNACZENIE)!!!
 for(int i = beg; i<=end; i++) POPRAWNE!!!
 */
-
-std::string debugArg(Ast potArg) {
-  if (auto *arg = std::get_if<std::string>(&potArg->value)) {
-    return *arg;
+void debugCommand(Ast command);
+void debugArg(Ast potArg) {
+  if (potArg->type != NodeType::Arg) {
+    debugCommand(potArg);
   }
-    return "Parser error";
+  if (auto *arg = std::get_if<std::string>(&potArg->value)) {
+    std::cout << *arg;
+  }
+  std::cerr << "Error during debugging Arg\n";
 }
 
 bool bindingCompare(std::shared_ptr<Token> tkn1, std::shared_ptr<Token> tkn2){
+    if(tkn1 == nullptr || tkn2 == nullptr){
+        std::cerr<<"Empty token durring bindong comparation\n";
+        updateErrorMessage("Parser: Empty token durring bindong comparation");
+        return false;
+    }
     if(tkn1->givePriority()!= tkn2->givePriority()){
         return tkn2->givePriority()>tkn1->givePriority();
     }
@@ -50,9 +59,11 @@ int Parser::findStrongestOperatorIndex(
     return index;
 }
 
-Ast Parser::parseCommand(const std::vector<std::shared_ptr<Token>>& tokens, int beg, int end){
+Ast Parser::parseCommand(const std::vector<std::shared_ptr<Token>>& tokens, 
+    int beg, int end){
     if(beg > end){
         std::cerr<<"Empty command\n";
+        updateErrorMessage("Parser: Empty command");
         return nullptr;
     }
     commandLineStruct newCommand;
@@ -60,6 +71,11 @@ Ast Parser::parseCommand(const std::vector<std::shared_ptr<Token>>& tokens, int 
     newCommand.args = {};
     newCommand.flags = {};
     for(int i = beg + 1; i <=end; i++){
+        if(tokens[i] == nullptr){
+            std::cerr<<"Parser: Error empty token during command parsing\n";
+            updateErrorMessage("Parser: Error empty token during command parsing");
+            return nullptr;
+        }
         switch (tokens[i]->giveTokenType()) {
             case Tokens::FLAG:
                 newCommand.flags.push_back(tokens[i]->giveTokenValue());
@@ -73,6 +89,8 @@ Ast Parser::parseCommand(const std::vector<std::shared_ptr<Token>>& tokens, int 
             default:
                 std::cerr<<"Not implemented token:\n";
                 tokens[i]->giveTokenValue();
+                updateErrorMessage("Unknown token" + 
+                    tokens[i]->giveTokenValue());
                 break;
         }
     }
@@ -83,6 +101,7 @@ Ast Parser::parseCommand(const std::vector<std::shared_ptr<Token>>& tokens, int 
 void debugCommand(Ast command){
     if(command ==nullptr){
         std::cerr<<"Null command\n";
+        return;
     }
     if(command->type != NodeType::Command){
         std::cerr<<"This is not a command\n";
@@ -96,7 +115,8 @@ void debugCommand(Ast command){
         }
         std::cout << "Arguments: ";
         for(Ast arg : cmd->args){
-            std::cout << ", "<< debugArg(arg);
+            std::cout << ", ";
+            debugArg(arg);
         }
         std::cout << ">\n";
     }
@@ -105,6 +125,11 @@ void debugCommand(Ast command){
 Ast Parser::parse(const std::vector<std::shared_ptr<Token>>& tokens, int beg, int end){
     int strongestIndex = this->findStrongestOperatorIndex(tokens, beg, end);
     std::shared_ptr<Token> strongestToken = tokens[strongestIndex];
+    if(strongestToken == nullptr){
+        std::cerr<<"Empty token during parsing\n";
+        updateErrorMessage("Parser: Error empty token during command parsing");
+        return nullptr;
+    }
     switch (strongestToken->giveTokenType()){
         case Tokens::PIPE : {
             Ast leftParse = parse(tokens, beg, strongestIndex - 1);
@@ -130,10 +155,12 @@ Ast Parser::parse(const std::vector<std::shared_ptr<Token>>& tokens, int beg, in
         case Tokens::APPEND : {
             if(strongestIndex == end){
                 std::cerr<<"Index out of range. Not filename given\n";
+                updateErrorMessage("Not filename given");
                 return nullptr;
             }
             if(tokens[strongestIndex + 1]->giveTokenType() != Tokens::ARG){
                 std::cerr<<"Not arg token found to parse to find filename\n";
+                updateErrorMessage("Wrong token (not an argument)"); // Poprawię, żeby wypisywało zły token
                 return nullptr;
             }
             appendStruct app;
@@ -145,10 +172,12 @@ Ast Parser::parse(const std::vector<std::shared_ptr<Token>>& tokens, int beg, in
             Ast leftParse = parse(tokens, beg, strongestIndex - 1);
             if(strongestIndex == end){
                 std::cerr<<"Index out of range. Not filename given\n";
+                updateErrorMessage("Not filename given");
                 return nullptr;
             }
             if(tokens[strongestIndex + 1]->giveTokenType() != Tokens::ARG){
                 std::cerr<<"Not arg token found to parse to find filename\n";
+                updateErrorMessage("Wrong token (not an argument)");;
                 return nullptr;
             }
             overwriteStruct ovr;
@@ -157,16 +186,23 @@ Ast Parser::parse(const std::vector<std::shared_ptr<Token>>& tokens, int beg, in
             return std::make_shared<AstNode>(NodeType::Overwrite, ovr);
         }
         case Tokens::ARG:
+            //std::cout<<"EEEEEEERRRRRRRRRRRRROOOOOOOOOOOORRRRRRR\n";
             std::cerr<<"Unbound argument " << strongestToken->giveTokenValue();
+            updateErrorMessage("Unknown command " + strongestToken->giveTokenValue());
             return nullptr;
         case Tokens::FLAG:
             std::cerr<<"Unbound flag " << strongestToken->giveTokenValue();
+            updateErrorMessage("Unbound flag " + strongestToken->giveTokenValue());
             return nullptr;
     }
     return nullptr;
 }
 
 void debugParsing(Ast expr){
+    if(expr == nullptr){
+        std::cerr<<"Debugging error: empty expression\n";
+        return;
+    }
     switch (expr-> type) {
         case NodeType::Command:
             debugCommand(expr);
