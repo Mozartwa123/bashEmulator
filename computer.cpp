@@ -38,7 +38,7 @@ private:
   string path;
   string objname;
   //bool isScriptObject;
-  string author;
+  shared_ptr<User> author;
   friend class MyDirectory;
   friend class File;
   friend class Computer;
@@ -48,7 +48,7 @@ private:
 
 public:
   string giveObjName() { return this->objname; }
-  string giveAuthor() { return this->author; }
+  string giveAuthor() { return this->author->giveUserName(); }
 };
 
 class MyDirectory : public MemObject, enable_shared_from_this<MyDirectory> {
@@ -57,7 +57,7 @@ public:
   vector<shared_ptr<MyDirectory>> childrenDir;
   vector<shared_ptr<File>> childrenFil;
 
-  MyDirectory(string name, string author,
+  MyDirectory(string name, shared_ptr<User> author,
               shared_ptr<MyDirectory> parent) {
     this->objname = name;
     this->author = author;
@@ -72,7 +72,7 @@ public:
     }*/
   }
 
-  static shared_ptr<MyDirectory> create(string name, string author,
+  static shared_ptr<MyDirectory> create(string name, shared_ptr<User> author,
                                         shared_ptr<MyDirectory> parent) {
     shared_ptr<MyDirectory> dir(new MyDirectory(name, author, parent));
     if (parent) {
@@ -107,19 +107,19 @@ public:
   }
 };
 
-class File : public MemObject {
+class File : public MemObject{
 public:
   string name;
-  bool isScriptObject;
+  shared_ptr<User> author;
   string filecontent;
   shared_ptr<MyDirectory> localization;
 
-  File(string name, shared_ptr<MyDirectory> localization) {
+  File(string name, shared_ptr<User> author, shared_ptr<MyDirectory> localization) {
     this->path = "";
     this->name = localization->objname + "/" + name;
     this->filecontent = "";
     this->localization = localization;
-    isScriptObject = false;
+    this->author = author;
   }
   string givePath() {
     if (this->path == "") {
@@ -136,50 +136,59 @@ public:
 
 class Computer {
 public:
-  string username;
+  vector<shared_ptr<User>> users;
+  shared_ptr<User> currentUser;
   string cmpname;
   shared_ptr<MyDirectory> userDirectory;
   shared_ptr<MyDirectory> rootDirectory;
   friend class Command;
   friend class Console;
 
+  string giveCurrentUserName(){
+    return this->currentUser->giveUserName();
+  }
   Computer(string username, string cmpname) {
+    shared_ptr<User> rootUser = make_shared<User>("root");
+    this->users = {};
+    users.push_back(rootUser);
+    shared_ptr<User> currentUser = make_shared<User>(username);
+    this->currentUser = currentUser;
+    users.push_back(currentUser);
     shared_ptr<MyDirectory> rootDirectory =
-        MyDirectory::create("/", "root", nullptr);
+        MyDirectory::create("/", rootUser, nullptr);
     this->rootDirectory = rootDirectory;
     allDirectories.push_back(rootDirectory);
-    allDirectories.push_back(MyDirectory::create("etc", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("etc", rootUser, rootDirectory));
     shared_ptr<MyDirectory> homeDirectory =
-        MyDirectory::create("home", "root", rootDirectory);
+        MyDirectory::create("home", rootUser, rootDirectory);
     // this -> homeDirectory = homeDirectory;
     allDirectories.push_back(homeDirectory);
     // allDirectories.push_back(MyDirectory::create("home", false,
     // rootDirectory));
-    allDirectories.push_back(MyDirectory::create("proc", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("lib", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("root", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("dev", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("bin", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("boot", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("proc", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("lib", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("root", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("dev", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("bin", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("boot", rootUser, rootDirectory));
     allDirectories.push_back(
-        MyDirectory::create("lib64", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("mnt", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("opt", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("run", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("usr", "root", rootDirectory));
-    allDirectories.push_back(MyDirectory::create("var", "root", rootDirectory));
-    this->username = username;
+        MyDirectory::create("lib64", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("mnt", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("opt", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("run", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("usr", rootUser, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("var", rootUser, rootDirectory));
     this->cmpname = cmpname;
     /* TODO: USER DIRECTORY!!!!*/
     this->currentDirectory =
-        MyDirectory::create(username, username, homeDirectory);
+        MyDirectory::create(username, currentUser, homeDirectory);
     this->userDirectory = this->currentDirectory;
     allDirectories.push_back(
-        MyDirectory::create("documents", username, this->userDirectory));
+        MyDirectory::create("documents", currentUser, this->userDirectory));
     allDirectories.push_back(
-        MyDirectory::create(".config", username, this->userDirectory));
+        MyDirectory::create(".config",currentUser, this->userDirectory));
     allDirectories.push_back(
-        MyDirectory::create(".local", username, this->userDirectory));
+        MyDirectory::create(".local", currentUser, this->userDirectory));
     allDirectories.push_back(this->currentDirectory);
   }
   static vector<shared_ptr<MyDirectory>> allDirectories;
@@ -228,6 +237,10 @@ public:
       : commandName(name), description(desc), availableFlags(flags),
         execute(func) {}
 };
+/*
+shared_ptr<MyDirectory> enterTheSceLast(shared_ptr<Computer>, string newObjPath){
+
+}*/
 
 string cd(vector<string> flags, vector<string> arguments,
           shared_ptr<Computer> computer, shared_ptr<Command> command) {
@@ -325,7 +338,7 @@ string fastfetch(vector<string> flags, vector<string> arguments,
     logoLines.push_back(line);
   }
 
-  string userHeader = computer->username + "@" + computer->cmpname;
+  string userHeader = computer->giveCurrentUserName() + "@" + computer->cmpname;
   string dashes = "";
   int userHeaderSize = userHeader.size();
   for (int i = 0; i < userHeaderSize; i++) {
@@ -558,7 +571,7 @@ public:
 
 private:
   void bashSession() {
-    cout << RED << this->computer->username << MAGENTA << "@" << GREEN
+    cout << RED << this->computer->giveCurrentUserName() << MAGENTA << "@" << GREEN
          << computer->cmpname + " " << YELLOW
          << ((computer->currentDirectory == computer->userDirectory)
                  ? "~"

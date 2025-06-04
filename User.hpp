@@ -9,5 +9,6 @@ class User{
         użytkownika jako pojedynczy string.
     */
     public:
+        User(std::string username);
         std::string giveUserName();
 };
