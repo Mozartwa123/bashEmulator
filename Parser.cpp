@@ -1,4 +1,5 @@
 //Parser.cpp
+#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -249,6 +250,10 @@ Parser::Parser(){}
 
 Ast Parser::initParsing(const std::vector<std::shared_ptr<Token>>& tokens){
     int end = tokens.size() - 1;
+    if(tokens.empty()){
+        updateErrorMessage("Empty token");
+        return nullptr;
+    }
     return parse(tokens, 0, end);
 }
 /*

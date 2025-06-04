@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include "User.hpp"
 #include "tokenizer.hpp"
 #include "error.hpp"
 #include <algorithm>
@@ -36,7 +37,8 @@ class MemObject {
 private:
   string path;
   string objname;
-  bool isScriptObject;
+  //bool isScriptObject;
+  string author;
   friend class MyDirectory;
   friend class File;
   friend class Computer;
@@ -46,6 +48,7 @@ private:
 
 public:
   string giveObjName() { return this->objname; }
+  string giveAuthor() { return this->author; }
 };
 
 class MyDirectory : public MemObject, enable_shared_from_this<MyDirectory> {
@@ -54,10 +57,10 @@ public:
   vector<shared_ptr<MyDirectory>> childrenDir;
   vector<shared_ptr<File>> childrenFil;
 
-  MyDirectory(string name, bool isScriptObject,
+  MyDirectory(string name, string author,
               shared_ptr<MyDirectory> parent) {
     this->objname = name;
-    this->isScriptObject = isScriptObject;
+    this->author = author;
     this->childrenDir = vector<shared_ptr<MyDirectory>>();
     this->childrenFil = vector<shared_ptr<File>>();
     this->parentDir = parent;
@@ -69,9 +72,9 @@ public:
     }*/
   }
 
-  static shared_ptr<MyDirectory> create(string name, bool isScriptObject,
+  static shared_ptr<MyDirectory> create(string name, string author,
                                         shared_ptr<MyDirectory> parent) {
-    shared_ptr<MyDirectory> dir(new MyDirectory(name, isScriptObject, parent));
+    shared_ptr<MyDirectory> dir(new MyDirectory(name, author, parent));
     if (parent) {
       parent->childrenDir.push_back(dir);
     }
@@ -142,41 +145,41 @@ public:
 
   Computer(string username, string cmpname) {
     shared_ptr<MyDirectory> rootDirectory =
-        MyDirectory::create("/", false, nullptr);
+        MyDirectory::create("/", "root", nullptr);
     this->rootDirectory = rootDirectory;
     allDirectories.push_back(rootDirectory);
-    allDirectories.push_back(MyDirectory::create("etc", false, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("etc", "root", rootDirectory));
     shared_ptr<MyDirectory> homeDirectory =
-        MyDirectory::create("home", false, rootDirectory);
+        MyDirectory::create("home", "root", rootDirectory);
     // this -> homeDirectory = homeDirectory;
     allDirectories.push_back(homeDirectory);
     // allDirectories.push_back(MyDirectory::create("home", false,
     // rootDirectory));
-    allDirectories.push_back(MyDirectory::create("proc", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("lib", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("root", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("dev", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("bin", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("boot", false, rootDirectory));
+    allDirectories.push_back(MyDirectory::create("proc", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("lib", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("root", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("dev", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("bin", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("boot", "root", rootDirectory));
     allDirectories.push_back(
-        MyDirectory::create("lib64", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("mnt", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("opt", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("run", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("usr", false, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("var", false, rootDirectory));
+        MyDirectory::create("lib64", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("mnt", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("opt", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("run", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("usr", "root", rootDirectory));
+    allDirectories.push_back(MyDirectory::create("var", "root", rootDirectory));
     this->username = username;
     this->cmpname = cmpname;
     /* TODO: USER DIRECTORY!!!!*/
     this->currentDirectory =
-        MyDirectory::create(username, false, homeDirectory);
+        MyDirectory::create(username, username, homeDirectory);
     this->userDirectory = this->currentDirectory;
     allDirectories.push_back(
-        MyDirectory::create("documents", false, this->userDirectory));
+        MyDirectory::create("documents", username, this->userDirectory));
     allDirectories.push_back(
-        MyDirectory::create(".config", false, this->userDirectory));
+        MyDirectory::create(".config", username, this->userDirectory));
     allDirectories.push_back(
-        MyDirectory::create(".local", false, this->userDirectory));
+        MyDirectory::create(".local", username, this->userDirectory));
     allDirectories.push_back(this->currentDirectory);
   }
   static vector<shared_ptr<MyDirectory>> allDirectories;
