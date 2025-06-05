@@ -98,11 +98,6 @@ std::vector<std::shared_ptr<Token>> Lexer::lexing(std::string& input){
             std::cout<<"is And\n";
             tokenList.push_back(std::make_shared<Token>(Tokens::ANDS, std::nullopt, 3, Binding::LEFT));
         } else if(std::find(implementedCommands.begin(), implementedCommands.end(), word) != implementedCommands.end()){
-            std::cout<<word;
-            std::cout << "DEBUG: implementedCommands:\n";
-for (const auto& cmd : implementedCommands) {
-    std::cout << "[" << cmd << "] ";
-}
             std::cout<<"is command\n";
             tokenList.push_back(std::make_shared<Token>(Tokens::CMDNAME, word, 1, Binding::LEFT));
         } else if (word.size() > 2 && word[0] == '-' && word[1] == '-'){

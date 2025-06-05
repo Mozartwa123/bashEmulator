@@ -380,7 +380,7 @@ string touchLoop(vector<string> flags, vector<string> arguments,
     computer->currentDirectory = curDir;
   }
   //cout<<"created directory" + dirName + "\n";
-  shared_ptr<MyDirectory> isAlreadyCreated = parDir->findChildDir(fileName);
+  shared_ptr<File> isAlreadyCreated = parDir->findChildFil(fileName);
   if(isAlreadyCreated!=nullptr){
     updateErrorMessage("File " + isAlreadyCreated -> givePath() + " already exists");
     return touchLoop(flags, arguments, computer, ++idx, argsize);
@@ -485,7 +485,7 @@ string listRec(shared_ptr<MyDirectory> listedDir, vector<string> flags,
         find(flags.begin(), flags.end(), "a") == flags.end()) {
       continue;
     }
-    cout<< fil->giveObjName();
+    //cout<< fil->giveObjName();
     output << fil->giveObjName() << "\t";
   }
   output << BLUE;
