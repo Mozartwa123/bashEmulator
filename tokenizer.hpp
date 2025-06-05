@@ -13,5 +13,6 @@
 std::vector<std::string> lineSplit(std::string line);
 std::vector<std::string> genSplit(std::string line, char separator);
 std::vector<std::string> pathSplit(std::string line);
+std::vector<std::string> pathSplitLast(std::string line);
 //std::vector<std::string> scriptSplit(std::string lines);
 void debugSplit(std::vector<std::string> tokens);

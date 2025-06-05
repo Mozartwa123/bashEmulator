@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include "Lexer.hpp"
 #include "User.hpp"
 #include "tokenizer.hpp"
 #include "error.hpp"
@@ -15,6 +16,9 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include "MemObject.hpp"
+#include "File.hpp"
+#include "MyDirectory.hpp"
 
 using namespace std;
 
@@ -24,15 +28,15 @@ using namespace std;
    idei kosztowała by mnie zaczynanie od początku (nawarstwienie problemów). Z
    tego powodu (prawie) wszystko jest w jednym pliku. Przepraszam zatrudności.
 */
-
 class File;
+class MemObject;
 class MyDirectory;
 class Computer;
 class Command;
 // class Lexer;
 // class Parser;
 class Console;
-
+/*
 class MemObject {
 private:
   string path;
@@ -49,6 +53,7 @@ private:
 public:
   string giveObjName() { return this->objname; }
   string giveAuthor() { return this->author->giveUserName(); }
+  shared_ptr<User> giveAuthorObject() { return this->author; }
 };
 
 class MyDirectory : public MemObject, enable_shared_from_this<MyDirectory> {
@@ -66,10 +71,11 @@ public:
     this->parentDir = parent;
     this->path = "";
     // cout<<"creating"<<name;
-    /*
+    
     if(parentDir!=nullptr){
         (parentDir->childrenDir).push_back(shared_from_this());
     }*/
+/*
   }
 
   static shared_ptr<MyDirectory> create(string name, shared_ptr<User> author,
@@ -82,8 +88,8 @@ public:
   }
 
   void attachToParent() {
-    if (parentDir != nullptr) {
-      parentDir->childrenDir.push_back(shared_from_this());
+    if (this->parentDir != nullptr) {
+      this->parentDir->childrenDir.push_back(shared_from_this());
     }
   }
   shared_ptr<MyDirectory> findChildDir(string name) {
@@ -94,6 +100,17 @@ public:
     }
     return nullptr;
   }
+*/
+/*
+  shared_ptr<MyDirectory> findChildFil(string name) {
+    for (shared_ptr<File> file : childrenFil) {
+      if (file->giveObjName() == name) {
+        return file;
+      }
+    }
+    return nullptr;
+  }
+
   string givePath() {
     if (this->path == "") {
       this->path =
@@ -109,14 +126,13 @@ public:
 
 class File : public MemObject{
 public:
-  string name;
   shared_ptr<User> author;
   string filecontent;
   shared_ptr<MyDirectory> localization;
 
   File(string name, shared_ptr<User> author, shared_ptr<MyDirectory> localization) {
     this->path = "";
-    this->name = localization->objname + "/" + name;
+    this->objname = name;
     this->filecontent = "";
     this->localization = localization;
     this->author = author;
@@ -133,7 +149,7 @@ public:
     return this->path;
   }
 };
-
+*/
 class Computer {
 public:
   vector<shared_ptr<User>> users;
@@ -157,44 +173,44 @@ public:
     shared_ptr<MyDirectory> rootDirectory =
         MyDirectory::create("/", rootUser, nullptr);
     this->rootDirectory = rootDirectory;
-    allDirectories.push_back(rootDirectory);
-    allDirectories.push_back(MyDirectory::create("etc", rootUser, rootDirectory));
+    //(rootDirectory);
+    MyDirectory::create("etc", rootUser, rootDirectory);
     shared_ptr<MyDirectory> homeDirectory =
         MyDirectory::create("home", rootUser, rootDirectory);
     // this -> homeDirectory = homeDirectory;
-    allDirectories.push_back(homeDirectory);
-    // allDirectories.push_back(MyDirectory::create("home", false,
+    //(homeDirectory);
+    // (MyDirectory::create("home", false,
     // rootDirectory));
-    allDirectories.push_back(MyDirectory::create("proc", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("lib", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("root", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("dev", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("bin", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("boot", rootUser, rootDirectory));
-    allDirectories.push_back(
+    MyDirectory::create("proc", rootUser, rootDirectory);
+    (MyDirectory::create("lib", rootUser, rootDirectory));
+    (MyDirectory::create("root", rootUser, rootDirectory));
+    (MyDirectory::create("dev", rootUser, rootDirectory));
+    (MyDirectory::create("bin", rootUser, rootDirectory));
+    (MyDirectory::create("boot", rootUser, rootDirectory));
+    (
         MyDirectory::create("lib64", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("mnt", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("opt", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("run", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("usr", rootUser, rootDirectory));
-    allDirectories.push_back(MyDirectory::create("var", rootUser, rootDirectory));
+    (MyDirectory::create("mnt", rootUser, rootDirectory));
+    (MyDirectory::create("opt", rootUser, rootDirectory));
+    (MyDirectory::create("run", rootUser, rootDirectory));
+    (MyDirectory::create("usr", rootUser, rootDirectory));
+    (MyDirectory::create("var", rootUser, rootDirectory));
     this->cmpname = cmpname;
     /* TODO: USER DIRECTORY!!!!*/
     this->currentDirectory =
         MyDirectory::create(username, currentUser, homeDirectory);
     this->userDirectory = this->currentDirectory;
-    allDirectories.push_back(
+    (
         MyDirectory::create("documents", currentUser, this->userDirectory));
-    allDirectories.push_back(
+    (
         MyDirectory::create(".config",currentUser, this->userDirectory));
-    allDirectories.push_back(
+    (
         MyDirectory::create(".local", currentUser, this->userDirectory));
-    allDirectories.push_back(this->currentDirectory);
   }
-  static vector<shared_ptr<MyDirectory>> allDirectories;
-  static vector<shared_ptr<MyDirectory>> allFiles;
+  //static vector<shared_ptr<MyDirectory>> allDirectories;
+  //static vector<shared_ptr<MyDirectory>> allFiles;
   static vector<shared_ptr<MyDirectory>> allCommands;
   shared_ptr<MyDirectory> currentDirectory;
+  /*
   shared_ptr<MyDirectory> find_dir(string name) {
     for (size_t i = 0; i < allDirectories.size(); i++) {
       if (allDirectories[i]->objname == name) {
@@ -210,7 +226,7 @@ public:
       }
     }
     return nullptr;
-  }
+  }*/
 };
 
 enum class SafetyStatus {
@@ -237,10 +253,6 @@ public:
       : commandName(name), description(desc), availableFlags(flags),
         execute(func) {}
 };
-/*
-shared_ptr<MyDirectory> enterTheSceLast(shared_ptr<Computer>, string newObjPath){
-
-}*/
 
 string cd(vector<string> flags, vector<string> arguments,
           shared_ptr<Computer> computer, shared_ptr<Command> command) {
@@ -314,6 +326,80 @@ string cd(vector<string> flags, vector<string> arguments,
   fprintf(stdout, "Entering directory %s\n", dir->giveObjName().c_str());
   computer->currentDirectory = dir;
   return dir->giveObjName();
+}
+
+string mkdirLoop(vector<string> flags, vector<string> arguments,
+                  shared_ptr<Computer> computer, int idx, int argsize) {
+  if (idx >= argsize) {
+    return "";
+  }
+  vector<string> cutPath = pathSplitLast(arguments[idx]);
+  shared_ptr<MyDirectory> parDir = computer->currentDirectory;
+  string dirName = arguments[idx];
+  if (!cutPath.empty()) {
+    string path = cutPath[0];
+    dirName = cutPath[1];
+    shared_ptr<MyDirectory> curDir = computer->currentDirectory;
+    cd({}, {path}, computer, nullptr);
+    parDir = computer->currentDirectory;
+    computer->currentDirectory = curDir;
+  }
+  //cout<<"created directory" + dirName + "\n";
+  shared_ptr<MyDirectory> isAlreadyCreated = parDir->findChildDir(dirName);
+  if(isAlreadyCreated!=nullptr){
+    updateErrorMessage("Directory " + isAlreadyCreated -> givePath() + " already exists");
+    return mkdirLoop(flags, arguments, computer, ++idx, argsize);
+  }
+  MyDirectory::create(dirName, computer->currentUser, parDir);
+
+  return mkdirLoop(flags, arguments, computer, ++idx, argsize);
+}
+
+string mkdir(vector<string> flags, vector<string> arguments,
+          shared_ptr<Computer> computer, shared_ptr<Command> command){
+            if(arguments.empty()){
+              updateErrorMessage("No directory name given. Command usage:\n"+command->description);
+            } else mkdirLoop(flags, arguments, computer, 0, arguments.size());
+            return "";
+          }
+
+string touchLoop(vector<string> flags, vector<string> arguments,
+                  shared_ptr<Computer> computer, int idx, int argsize) {
+  if (idx >= argsize) {
+    return "";
+  }
+  vector<string> cutPath = pathSplitLast(arguments[idx]);
+  shared_ptr<MyDirectory> parDir = computer->currentDirectory;
+  string fileName = arguments[idx];
+  if (!cutPath.empty()) {
+    string path = cutPath[0];
+    fileName = cutPath[1];
+    shared_ptr<MyDirectory> curDir = computer->currentDirectory;
+    cd({}, {path}, computer, nullptr);
+    parDir = computer->currentDirectory;
+    computer->currentDirectory = curDir;
+  }
+  //cout<<"created directory" + dirName + "\n";
+  shared_ptr<MyDirectory> isAlreadyCreated = parDir->findChildDir(fileName);
+  if(isAlreadyCreated!=nullptr){
+    updateErrorMessage("File " + isAlreadyCreated -> givePath() + " already exists");
+    return touchLoop(flags, arguments, computer, ++idx, argsize);
+  }
+  shared_ptr<File> newFile = make_shared<File>(fileName, parDir->giveAuthorObject(), parDir);
+  //cout<<"PLIIIK!!!";
+  parDir->childrenFil.push_back(newFile);
+ //cout<<"PLIIIK!!!";
+  return touchLoop(flags, arguments, computer, ++idx, argsize);
+}
+
+string touch(vector<string> flags, vector<string> arguments,
+             shared_ptr<Computer> computer, shared_ptr<Command> command) {
+  if (arguments.empty()) {
+    updateErrorMessage("No file name given. Command usage:\n" +
+                       command->description);
+  } else
+    touchLoop(flags, arguments, computer, 0, arguments.size());
+  return "";
 }
 
 string clear(vector<string> flags, vector<string> arguments,
@@ -394,10 +480,12 @@ string listRec(shared_ptr<MyDirectory> listedDir, vector<string> flags,
     output << endl;
   }
   for (shared_ptr<File> fil : listedDir->childrenFil) {
+    //cout<<"WYpisuje, ale nie wypisuje\n";
     if (fil->giveObjName()[0] == '.' &&
         find(flags.begin(), flags.end(), "a") == flags.end()) {
       continue;
     }
+    cout<< fil->giveObjName();
     output << fil->giveObjName() << "\t";
   }
   output << BLUE;
@@ -461,6 +549,10 @@ public:
         "clear", "clearing console", map<string, SafetyStatus>{}, clear);
     availableCommands["ls"] = make_shared<Command>(
         "ls", "listing directory content", map<string, SafetyStatus>{}, ls);
+    availableCommands["mkdir"] = make_shared<Command>(
+        "mkdir", "creating directories. Usage mkdir [dir1] [dir2] ...", map<string, SafetyStatus>{}, mkdir);
+    availableCommands["touch"] = make_shared<Command>(
+        "touch", "creating files. Usage touch [file1] [file2] ...", map<string, SafetyStatus>{}, touch);
     this->computer = computer;
     this->lexer = make_shared<Lexer>();
     this->parser = make_shared<Parser>();
@@ -591,8 +683,8 @@ private:
 };
 
 map<string, shared_ptr<Command>> Interpreter::availableCommands = {};
-vector<shared_ptr<MyDirectory>> Computer::allDirectories = {};
-vector<shared_ptr<MyDirectory>> Computer::allFiles = {};
+//vector<shared_ptr<MyDirectory>> Computer::allDirectories = {};
+//vector<shared_ptr<MyDirectory>> Computer::allFiles = {};
 
 int main(void) {
 

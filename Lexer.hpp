@@ -1,4 +1,5 @@
 //Lexer.hpp
+#pragma once
 #include <vector>
 #include <string>
 #include <string>

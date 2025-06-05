@@ -41,6 +41,20 @@ vector<string> pathSplit(string line){
     return presult;
 }
 
+std::vector<std::string> pathSplitLast(std::string line){
+    int pathsize = line.size();
+    int i = pathsize;
+    for(; i >= 0 && line[i]!='/'; i--){}
+    if(i == -1){
+        //cout<<"-1!\n";
+        return {};
+    }
+    if(i == 0){
+        return {"/", line.substr(1, pathsize - 1)};
+    }
+    return {line.substr(0, i), line.substr(i+1, pathsize - 1)};
+}
+
 vector<string> scriptSplitFromStdin(){
     string token;
     vector<string> result;

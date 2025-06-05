@@ -1,1 +1,1 @@
-g++ computer.cpp commandline.cpp tokenizer.cpp
+g++ -o bashem computer.cpp MemObject.cpp User.cpp Lexer.cpp Parser.cpp tokenizer.cpp error.cpp
