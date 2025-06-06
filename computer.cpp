@@ -23,6 +23,8 @@
 using namespace std;
 
 using Usr = shared_ptr<User>;
+using Dir = shared_ptr<MyDirectory>;
+using Fil = shared_ptr<File>;
 /*
     Niestety za późno zorientowałem się, jak TRUDNE jest rozdzielanie plików w
    c++ (nagłówki bez namespace std; implementacje metod w pliku cpp). Zmiana
@@ -440,11 +442,13 @@ string rmdirLoop(vector<string> flags, vector<string> arguments,
     return "";
   }
   shared_ptr<MyDirectory> curr = computer->currentDirectory;
+  shared_ptr<MyDirectory> deleted = computer->currentDirectory;
+  shared_ptr<MyDirectory> deletedDirParent = deleted->parentDir;
+  computer->currentDirectory = curr;
   cd({}, {arguments[idx]}, computer, nullptr);
   if(errorOccured){
     return rmdirLoop(flags, arguments, computer, ++idx, argsize); //powiedzmy, że błędami się nie przejmujemy...
   }
-  shared_ptr<MyDirectory> deleted = computer->currentDirectory; //oczywiście poprawię niesprawdzanie błędu cd
   if(!deleted->childrenDir.empty()){
     updateErrorMessage("If you want to destroy your data next time type rm -rf...");
     return "";
@@ -453,8 +457,6 @@ string rmdirLoop(vector<string> flags, vector<string> arguments,
     updateErrorMessage("You are trying to destroy not your directory. THIS SKANDAL WILL BE REPORTED (LIKE ON DEBIAN)");
     return "";
   }
-  shared_ptr<MyDirectory> deletedDirParent = deleted->parentDir;
-  computer->currentDirectory = curr;
   deletedDirParent->childrenDir.erase(
     std::remove_if(
         deletedDirParent->childrenDir.begin(),
@@ -477,6 +479,66 @@ string rmdir(vector<string> flags, vector<string> arguments,
             return rmdirLoop( flags, arguments, computer, 0, arguments.size());
           }
 
+string rmLoop(vector<string> flags, vector<string> arguments,
+                  shared_ptr<Computer> computer, int idx, int argsize){
+  vector<string> splitLast = pathSplitLast(arguments[idx]);
+  Dir deletedDirParent = computer->currentDirectory;
+  string deletedName = arguments[idx];
+  if(arguments[idx] == "~" || arguments[idx] == "~/"){
+    deletedDirParent = computer->userDirectory->parentDir;
+  } else if(!splitLast.empty()){
+    Dir pom = deletedDirParent;
+    cd({}, {arguments[idx]}, computer, nullptr);
+    deletedDirParent = computer->currentDirectory;
+    computer->currentDirectory = pom;
+    deletedName = splitLast[1];
+  }
+  if(find(flags.begin(), flags.end(), "r") == flags.end()){
+    Dir deleted = deletedDirParent->findChildDir(deletedName);
+    if(deleted->giveAuthor()!=computer->currentUser->giveUserName() && computer->currentUser->showPriveledges()!=Priveledges::EVERYTHING){
+      updateErrorMessage("You are trying to destroy not your data. This skandal will be reported (like on Debian)");
+      return "";
+    }
+    if(deletedDirParent->findChildDir(deletedName) == nullptr){
+      updateErrorMessage("No such directory found" + deletedName);
+      return "";
+    }
+    deletedDirParent->childrenDir.erase(
+    std::remove_if(
+        deletedDirParent->childrenDir.begin(),
+        deletedDirParent->childrenDir.end(),
+        [&deleted](const std::shared_ptr<MyDirectory>& dir) {
+            return dir == deleted;
+        }
+    ),
+    deletedDirParent->childrenDir.end()
+);
+    //usuwam katalog - ze względu na wyścig z czasem nie będzie rekursywnego zwalniania pamięci
+  } else {
+    Fil deleted = deletedDirParent->findChildFil(deletedName);
+    if(deleted->giveAuthor()!=computer->currentUser->giveUserName() && computer->currentUser->showPriveledges()!=Priveledges::EVERYTHING){
+      updateErrorMessage("You are trying to destroy not your data. This skandal will be reported (like on Debian)");
+      return "";
+    }
+    if(deleted == nullptr){
+      updateErrorMessage("No such file found" + deletedName);
+      return "";
+    }
+    deletedDirParent->childrenFil.erase(
+    std::remove_if(
+        deletedDirParent->childrenFil.begin(),
+        deletedDirParent->childrenFil.end(),
+        [&deleted](const std::shared_ptr<File>& dir) {
+            return dir == deleted;
+        }
+    ),
+    deletedDirParent->childrenFil.end()
+);
+    
+    //usuwanie pliku
+  }
+  return "";
+  }
 string ls(vector<string> flags, vector<string> arguments,
           shared_ptr<Computer> computer, shared_ptr<Command> command) {
   shared_ptr<MyDirectory> listedDir;
@@ -556,7 +618,7 @@ public:
     availableCommands["clear"] = make_shared<Command>(
         "clear", "clearing console", map<string, SafetyStatus>{}, clear);
     availableCommands["ls"] = make_shared<Command>(
-        "ls", "listing directory content", map<string, SafetyStatus>{}, ls);
+        "ls", "listing directory content. Usage ls [OPTIONAL dir]", map<string, SafetyStatus>{}, ls);
     availableCommands["mkdir"] = make_shared<Command>(
         "mkdir", "creating directories. Usage mkdir [dir1] [dir2] ...", map<string, SafetyStatus>{}, mkdir);
     availableCommands["touch"] = make_shared<Command>(
@@ -565,6 +627,8 @@ public:
         "cat", "showing file content. Usage cat [file] ...", map<string, SafetyStatus>{}, cat);
     availableCommands["rmdir"] = make_shared<Command>(
         "rmdir", "removing EMPTY!!! directories. Usage rmdir [file] ...", map<string, SafetyStatus>{}, rmdir);
+    availableCommands["su"] = make_shared<Command>(
+        "su", "switch user: Usage su [user Name] ...", map<string, SafetyStatus>{}, su);
     this->computer = computer;
     this->lexer = make_shared<Lexer>();
     this->parser = make_shared<Parser>();

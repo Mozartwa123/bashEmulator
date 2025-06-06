@@ -42,6 +42,9 @@ vector<string> pathSplit(string line){
 }
 
 std::vector<std::string> pathSplitLast(std::string line){
+    if(line == "/"){
+        return {};
+    }
     int pathsize = line.size();
     int i = pathsize;
     for(; i >= 0 && line[i]!='/'; i--){}
