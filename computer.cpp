@@ -106,6 +106,24 @@ public:
     //UWAGA!!! Żeby przełączyć się na roota wpisujemy su root42, a nie sudo su, bo nie zaimplementuję sudo - brak czasu
     return nullptr;
   }
+  void deleteDirectoryRecursevely(Dir del){
+    for(std::shared_ptr<File> file : del->childrenFil){
+      file.reset();
+      //file = nullptr;
+    }
+    for(std::shared_ptr<MyDirectory> dir : del->childrenDir){
+      deleteDirectoryRecursevely(dir);
+    }
+    if(del == this->currentDirectory){
+      this->currentDirectory = nullptr;
+    } else if (del == this->userDirectory){
+      cout<<"Setting user directory null\n";
+      this->userDirectory = nullptr;
+    }
+    else {
+    del.reset();
+    }
+  }
 };
 
 enum class SafetyStatus {
@@ -310,7 +328,8 @@ string touchLoop(vector<string> flags, vector<string> arguments,
     updateErrorMessage("File " + isAlreadyCreated -> givePath() + " already exists");
     return touchLoop(flags, arguments, computer, ++idx, argsize);
   }
-  shared_ptr<File> newFile = make_shared<File>(fileName, parDir->giveAuthorObject(), parDir);
+  shared_ptr<File> newFile = make_shared<File>(fileName, computer->currentUser, parDir);
+  cout<<newFile->giveAuthor(); //segfault
   //cout<<"PLIIIK!!!";
   parDir->childrenFil.push_back(newFile);
  //cout<<"PLIIIK!!!";
@@ -481,26 +500,45 @@ string rmdir(vector<string> flags, vector<string> arguments,
 
 string rmLoop(vector<string> flags, vector<string> arguments,
                   shared_ptr<Computer> computer, int idx, int argsize){
+  if(idx >= argsize){
+    return "";
+  }
   vector<string> splitLast = pathSplitLast(arguments[idx]);
   Dir deletedDirParent = computer->currentDirectory;
   string deletedName = arguments[idx];
+  cout<<"Preparing memobject...\n";
   if(arguments[idx] == "~" || arguments[idx] == "~/"){
     deletedDirParent = computer->userDirectory->parentDir;
   } else if(!splitLast.empty()){
     Dir pom = deletedDirParent;
-    cd({}, {arguments[idx]}, computer, nullptr);
+    cd({}, {splitLast[0]}, computer, nullptr);
+    cout<<"ParentDIr is "<< deletedDirParent->giveObjName()<<"\n";
     deletedDirParent = computer->currentDirectory;
+    cout<<"ParentDIr is "<< deletedDirParent->giveObjName()<<"\n";
     computer->currentDirectory = pom;
     deletedName = splitLast[1];
   }
-  if(find(flags.begin(), flags.end(), "r") == flags.end()){
-    Dir deleted = deletedDirParent->findChildDir(deletedName);
-    if(deleted->giveAuthor()!=computer->currentUser->giveUserName() && computer->currentUser->showPriveledges()!=Priveledges::EVERYTHING){
-      updateErrorMessage("You are trying to destroy not your data. This skandal will be reported (like on Debian)");
+  if(find(flags.begin(), flags.end(), "r") != flags.end()){
+    cout<<"Finding directory...\n";
+    cout<<deletedName<<"\n";
+    Dir deleted = deletedName == "/" ? computer->rootDirectory : (deletedName == "~" || deletedName == "~/") ? 
+    computer->userDirectory : deletedDirParent->findChildDir(deletedName);
+    if(deleted == nullptr){
+      updateErrorMessage("No such directory found" + deletedName);
       return "";
     }
-    if(deletedDirParent->findChildDir(deletedName) == nullptr){
-      updateErrorMessage("No such directory found" + deletedName);
+    if(deleted->giveAuthor()!=computer->currentUser->giveUserName() && computer->currentUser->showPriveledges()!=Priveledges::EVERYTHING){
+      updateErrorMessage(
+        "You are trying to destroy not your data. This skandal will be reported (like on Debian)");
+      return "";
+    }
+    cout<<"Directory Found...\n";
+    if(deletedName == "/"){
+      updateErrorMessage("Not allowed, even for root :D");
+      updateErrorMessage("But seriously, what was the idea behind it...?");
+      updateErrorMessage("Not satisfied with our noKernelOS :-O?");
+      updateErrorMessage("You receive a segfault");
+      computer->deleteDirectoryRecursevely(computer->rootDirectory);
       return "";
     }
     deletedDirParent->childrenDir.erase(
@@ -513,17 +551,27 @@ string rmLoop(vector<string> flags, vector<string> arguments,
     ),
     deletedDirParent->childrenDir.end()
 );
-    //usuwam katalog - ze względu na wyścig z czasem nie będzie rekursywnego zwalniania pamięci
+    computer->deleteDirectoryRecursevely(deleted);
   } else {
     Fil deleted = deletedDirParent->findChildFil(deletedName);
-    if(deleted->giveAuthor()!=computer->currentUser->giveUserName() && computer->currentUser->showPriveledges()!=Priveledges::EVERYTHING){
-      updateErrorMessage("You are trying to destroy not your data. This skandal will be reported (like on Debian)");
-      return "";
-    }
     if(deleted == nullptr){
       updateErrorMessage("No such file found" + deletedName);
       return "";
     }
+    if(deleted != nullptr){
+      cout<<deleted->giveObjName();
+    }
+    cout<<"current user is"<< computer->currentUser->giveUserName();
+    cout<<"author of deleted is"<<deleted->giveAuthor();
+    //cout<<"333\n";
+    cout<<"author of deleted is"<<deleted->giveAuthor()<<"\n";
+    //cout<<"444\n";
+    cout<<"current user is"<< computer->currentUser->giveUserName()<<"\n";
+    if(deleted->giveAuthor()!=computer->currentUser->giveUserName() && computer->currentUser->showPriveledges()!=Priveledges::EVERYTHING){
+      updateErrorMessage("You are trying to destroy not your data. This skandal will be reported (like on Debian)");
+      return "";
+    }
+    cout<<"Deleted File is"<<deleted->giveObjName();
     deletedDirParent->childrenFil.erase(
     std::remove_if(
         deletedDirParent->childrenFil.begin(),
@@ -537,8 +585,17 @@ string rmLoop(vector<string> flags, vector<string> arguments,
     
     //usuwanie pliku
   }
-  return "";
+  return rmLoop(flags, arguments, computer, ++idx, argsize);
   }
+
+string rm(vector<string> flags, vector<string> arguments,
+            shared_ptr<Computer> computer, shared_ptr<Command> command) {
+    if (arguments.empty()) {
+      updateErrorMessage("No arguments given");
+    }
+    return rmLoop(flags, arguments, computer, 0, arguments.size());
+  }
+
 string ls(vector<string> flags, vector<string> arguments,
           shared_ptr<Computer> computer, shared_ptr<Command> command) {
   shared_ptr<MyDirectory> listedDir;
@@ -556,6 +613,22 @@ string ls(vector<string> flags, vector<string> arguments,
   //cout << result;
   cout << RESET;
   return result;
+}
+
+string echo(vector<string> flags, vector<string> arguments,
+            shared_ptr<Computer> computer, shared_ptr<Command> command) {
+  /*
+  
+  Niestety w obecnej implementacji echo jest w stanie wypisać tylko jedno słowo. NIe dodałem jeszcze
+  funkcji do lexera pozwalającej zbierać tokeny ograniczone przez jakieś znaki np. $( oraz ), a także cudzysłowy
+  Ale to wszystko jest do zrobienia - wystarczy dodać odpowiednie tokeny i odpowiednie metody.
+  
+  */
+  if (arguments.empty()) {
+    updateErrorMessage("Not input given to write out");
+    return "";
+  }
+  return arguments[0];
 }
 
 enum class fileModyfications{
@@ -629,6 +702,10 @@ public:
         "rmdir", "removing EMPTY!!! directories. Usage rmdir [file] ...", map<string, SafetyStatus>{}, rmdir);
     availableCommands["su"] = make_shared<Command>(
         "su", "switch user: Usage su [user Name] ...", map<string, SafetyStatus>{}, su);
+    availableCommands["rm"] = make_shared<Command>(
+        "rm", "deleting files: Usage rm [file name] ...", map<string, SafetyStatus>{}, rm);
+    availableCommands["echo"] = make_shared<Command>(
+        "echo", "identity function on your input: Usage echo [text] ...", map<string, SafetyStatus>{}, echo);
     this->computer = computer;
     this->lexer = make_shared<Lexer>();
     this->parser = make_shared<Parser>();
@@ -751,6 +828,10 @@ public:
 
 private:
   void bashSession() {
+    if(this->computer->currentDirectory == nullptr  || this->computer->rootDirectory == nullptr || this->computer->userDirectory == nullptr){
+      cout<<"You've just DESTROY your system. Goodbye, murder!";
+      return;
+    }
     cout
         << this->computer->currentUser->getUsrColor()
         << this->computer->giveCurrentUserName()

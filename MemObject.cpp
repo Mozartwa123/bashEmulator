@@ -3,6 +3,7 @@
 #include "User.hpp"
 #include <memory>
 #include <string>
+#include <iostream>
 
 std::string MemObject::giveObjName() { return this->objname; }
 std::string MemObject::giveAuthor() { return this->author->giveUserName(); }
@@ -71,6 +72,9 @@ File::File(std::string name, std::shared_ptr<User> author,
   this->filecontent = "#!/bin/bash";
   this->localization = localization;
   this->author = author;
+  //if(this->author!=nullptr){
+    //std::cout<<"author of this file will be"<<this->author->giveUserName();
+  //}
 }
 std::string File::givePath() {
   if (this->path == "") {
