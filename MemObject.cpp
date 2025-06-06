@@ -68,7 +68,7 @@ File::File(std::string name, std::shared_ptr<User> author,
            std::shared_ptr<MyDirectory> localization) {
   this->path = "";
   this->objname = name;
-  this->filecontent = "";
+  this->filecontent = "#!/bin/bash";
   this->localization = localization;
   this->author = author;
 }
@@ -76,10 +76,21 @@ std::string File::givePath() {
   if (this->path == "") {
     this->path =
         (this->giveObjName() == "/" ? "/"
-                                    : (this->localization->giveObjName() == "/"
-                                           ? "/" + this->giveObjName()
-                                           : this->localization->givePath() +
-                                                 "/" + this->giveObjName()));
+        : (this->localization->giveObjName() == "/"
+        ? "/" + this->giveObjName()
+        : this->localization->givePath() +
+        "/" + this->giveObjName()));
   }
   return this->path;
+}
+
+std::string File::giveContent(){
+  return this->filecontent;
+}
+void File::setContent(std::string newContent){
+  this->filecontent = newContent;
+}
+
+void File::appendContent(std::string appendedContent){
+  this->filecontent += appendedContent;
 }

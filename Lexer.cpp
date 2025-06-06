@@ -21,6 +21,8 @@ std::vector<std::string> implementedCommands{
     "ls",
     "clear",
     "mkdir",
+    "cat",
+    "rmdir"
 };
 
 Token::Token(Tokens tokenType, std::optional<std::string> value, int priority, Binding bindRule)

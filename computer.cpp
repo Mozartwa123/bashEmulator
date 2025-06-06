@@ -22,6 +22,7 @@
 
 using namespace std;
 
+using Usr = shared_ptr<User>;
 /*
     Niestety za późno zorientowałem się, jak TRUDNE jest rozdzielanie plików w
    c++ (nagłówki bez namespace std; implementacje metod w pliku cpp). Zmiana
@@ -33,130 +34,16 @@ class MemObject;
 class MyDirectory;
 class Computer;
 class Command;
-// class Lexer;
-// class Parser;
 class Console;
-/*
-class MemObject {
-private:
-  string path;
-  string objname;
-  //bool isScriptObject;
-  shared_ptr<User> author;
-  friend class MyDirectory;
-  friend class File;
-  friend class Computer;
-  friend class Command;
 
-  friend class Console;
-
-public:
-  string giveObjName() { return this->objname; }
-  string giveAuthor() { return this->author->giveUserName(); }
-  shared_ptr<User> giveAuthorObject() { return this->author; }
-};
-
-class MyDirectory : public MemObject, enable_shared_from_this<MyDirectory> {
-public:
-  shared_ptr<MyDirectory> parentDir;
-  vector<shared_ptr<MyDirectory>> childrenDir;
-  vector<shared_ptr<File>> childrenFil;
-
-  MyDirectory(string name, shared_ptr<User> author,
-              shared_ptr<MyDirectory> parent) {
-    this->objname = name;
-    this->author = author;
-    this->childrenDir = vector<shared_ptr<MyDirectory>>();
-    this->childrenFil = vector<shared_ptr<File>>();
-    this->parentDir = parent;
-    this->path = "";
-    // cout<<"creating"<<name;
-    
-    if(parentDir!=nullptr){
-        (parentDir->childrenDir).push_back(shared_from_this());
-    }*/
-/*
-  }
-
-  static shared_ptr<MyDirectory> create(string name, shared_ptr<User> author,
-                                        shared_ptr<MyDirectory> parent) {
-    shared_ptr<MyDirectory> dir(new MyDirectory(name, author, parent));
-    if (parent) {
-      parent->childrenDir.push_back(dir);
-    }
-    return dir;
-  }
-
-  void attachToParent() {
-    if (this->parentDir != nullptr) {
-      this->parentDir->childrenDir.push_back(shared_from_this());
-    }
-  }
-  shared_ptr<MyDirectory> findChildDir(string name) {
-    for (shared_ptr<MyDirectory> dir : childrenDir) {
-      if (dir->objname == name) {
-        return dir;
-      }
-    }
-    return nullptr;
-  }
-*/
-/*
-  shared_ptr<MyDirectory> findChildFil(string name) {
-    for (shared_ptr<File> file : childrenFil) {
-      if (file->giveObjName() == name) {
-        return file;
-      }
-    }
-    return nullptr;
-  }
-
-  string givePath() {
-    if (this->path == "") {
-      this->path =
-          (this->giveObjName() == "/" ? "/"
-                                      : (this->parentDir->giveObjName() == "/"
-                                             ? "/" + this->giveObjName()
-                                             : this->parentDir->givePath() +
-                                                   "/" + this->giveObjName()));
-    }
-    return this->path;
-  }
-};
-
-class File : public MemObject{
-public:
-  shared_ptr<User> author;
-  string filecontent;
-  shared_ptr<MyDirectory> localization;
-
-  File(string name, shared_ptr<User> author, shared_ptr<MyDirectory> localization) {
-    this->path = "";
-    this->objname = name;
-    this->filecontent = "";
-    this->localization = localization;
-    this->author = author;
-  }
-  string givePath() {
-    if (this->path == "") {
-      this->path = (this->giveObjName() == "/"
-                        ? "/"
-                        : (this->localization->giveObjName() == "/"
-                               ? "/" + this->giveObjName()
-                               : this->localization->givePath() + "/" +
-                                     this->giveObjName()));
-    }
-    return this->path;
-  }
-};
-*/
 class Computer {
 public:
-  vector<shared_ptr<User>> users;
+  //vector<shared_ptr<User>> users;
   shared_ptr<User> currentUser;
   string cmpname;
   shared_ptr<MyDirectory> userDirectory;
   shared_ptr<MyDirectory> rootDirectory;
+  static vector<Usr> allUsers;
   friend class Command;
   friend class Console;
 
@@ -164,23 +51,23 @@ public:
     return this->currentUser->giveUserName();
   }
   Computer(string username, string cmpname) {
-    shared_ptr<User> rootUser = make_shared<User>("root");
-    this->users = {};
-    users.push_back(rootUser);
+    shared_ptr<User> rootUser = make_shared<User>("root42");
+    rootUser->setPriveledges(Priveledges::EVERYTHING);
+    rootUser->setPromntLook(RED, RED, RED, "#");
+    allUsers.push_back(rootUser);
+    //this->users = {};
+    //users.push_back(rootUser);
     shared_ptr<User> currentUser = make_shared<User>(username);
+    currentUser->setPromntLook(GREEN, RED, MAGENTA, "$");
+    allUsers.push_back(currentUser);
     this->currentUser = currentUser;
-    users.push_back(currentUser);
+    //users.push_back(currentUser);
     shared_ptr<MyDirectory> rootDirectory =
         MyDirectory::create("/", rootUser, nullptr);
     this->rootDirectory = rootDirectory;
-    //(rootDirectory);
     MyDirectory::create("etc", rootUser, rootDirectory);
     shared_ptr<MyDirectory> homeDirectory =
         MyDirectory::create("home", rootUser, rootDirectory);
-    // this -> homeDirectory = homeDirectory;
-    //(homeDirectory);
-    // (MyDirectory::create("home", false,
-    // rootDirectory));
     MyDirectory::create("proc", rootUser, rootDirectory);
     (MyDirectory::create("lib", rootUser, rootDirectory));
     (MyDirectory::create("root", rootUser, rootDirectory));
@@ -206,27 +93,17 @@ public:
     (
         MyDirectory::create(".local", currentUser, this->userDirectory));
   }
-  //static vector<shared_ptr<MyDirectory>> allDirectories;
-  //static vector<shared_ptr<MyDirectory>> allFiles;
-  static vector<shared_ptr<MyDirectory>> allCommands;
-  shared_ptr<MyDirectory> currentDirectory;
-  /*
-  shared_ptr<MyDirectory> find_dir(string name) {
-    for (size_t i = 0; i < allDirectories.size(); i++) {
-      if (allDirectories[i]->objname == name) {
-        return allDirectories[i];
+  //static vector<shared_ptr<MyDirectory>> allCommands;
+  shared_ptr<MyDirectory> currentDirectory; //w tej wersji projektu możliwe będzie przełączanie się na root42 i na domyślnego użytkownika
+  Usr findUser(string username){
+    for(Usr usr : allUsers){
+      if(usr->giveUserName() == username){
+        return usr;
       }
     }
+    //UWAGA!!! Żeby przełączyć się na roota wpisujemy su root42, a nie sudo su, bo nie zaimplementuję sudo - brak czasu
     return nullptr;
   }
-  shared_ptr<MyDirectory> find_fil(string name) {
-    for (size_t i = 0; i < allFiles.size(); i++) {
-      if (allFiles[i]->objname == name) {
-        return allFiles[i];
-      }
-    }
-    return nullptr;
-  }*/
 };
 
 enum class SafetyStatus {
@@ -253,6 +130,28 @@ public:
       : commandName(name), description(desc), availableFlags(flags),
         execute(func) {}
 };
+
+string su(vector<string> flags, vector<string> arguments,
+          shared_ptr<Computer> computer, shared_ptr<Command> command) {
+  if (arguments.empty()) {
+    updateErrorMessage("No user given");
+    return "";
+  }
+  if (arguments.size() > 1) {
+    updateErrorMessage("To many arguments for su");
+    return "";
+  }
+  Usr switchTo = computer->findUser(arguments[0]);
+  if(switchTo == nullptr){
+    updateErrorMessage("No such user found...");
+    if(arguments[0] == "root"){
+      updateErrorMessage("Hint! If you want to switch root type su root42.\n Such a root user name is to prevent you confusing this emulator with your real machine especially\n typing rm -rf / as a root...");
+    }
+    return "";
+  }
+  computer->currentUser = switchTo;
+  return "";
+}
 
 string cd(vector<string> flags, vector<string> arguments,
           shared_ptr<Computer> computer, shared_ptr<Command> command) {
@@ -326,6 +225,30 @@ string cd(vector<string> flags, vector<string> arguments,
   fprintf(stdout, "Entering directory %s\n", dir->giveObjName().c_str());
   computer->currentDirectory = dir;
   return dir->giveObjName();
+}
+
+string cat(vector<string> flags, vector<string> arguments,
+           shared_ptr<Computer> computer, shared_ptr<Command> command) {
+  if (arguments.empty()) {
+    updateErrorMessage("File not given");
+    return "";
+  }
+  string fileName = arguments[0];
+  shared_ptr<MyDirectory> fileLocalization = computer->currentDirectory;
+  vector<string> cutPath = pathSplitLast(fileName);
+  if(!cutPath.empty()){
+    shared_ptr<MyDirectory> pomDir = computer->currentDirectory;
+    cd({}, {cutPath[0]}, computer, nullptr);
+    fileLocalization = computer->currentDirectory;
+    fileName = cutPath[1];
+    computer->currentDirectory = pomDir;
+  }
+  shared_ptr<File> showedFile = fileLocalization->findChildFil(fileName);
+  if(showedFile == nullptr){
+    updateErrorMessage("No such file found");
+    return "";
+  }
+  return showedFile->giveContent();
 }
 
 string mkdirLoop(vector<string> flags, vector<string> arguments,
@@ -511,6 +434,49 @@ string listRec(shared_ptr<MyDirectory> listedDir, vector<string> flags,
   return result;
 }
 
+string rmdirLoop(vector<string> flags, vector<string> arguments,
+                  shared_ptr<Computer> computer, int idx, int argsize) {
+  if (idx >= argsize) {
+    return "";
+  }
+  shared_ptr<MyDirectory> curr = computer->currentDirectory;
+  cd({}, {arguments[idx]}, computer, nullptr);
+  if(errorOccured){
+    return rmdirLoop(flags, arguments, computer, ++idx, argsize); //powiedzmy, że błędami się nie przejmujemy...
+  }
+  shared_ptr<MyDirectory> deleted = computer->currentDirectory; //oczywiście poprawię niesprawdzanie błędu cd
+  if(!deleted->childrenDir.empty()){
+    updateErrorMessage("If you want to destroy your data next time type rm -rf...");
+    return "";
+  }
+  if(computer->currentUser->giveUserName()!=deleted->giveAuthor() && computer->currentUser->showPriveledges()==Priveledges::NOTHING){
+    updateErrorMessage("You are trying to destroy not your directory. THIS SKANDAL WILL BE REPORTED (LIKE ON DEBIAN)");
+    return "";
+  }
+  shared_ptr<MyDirectory> deletedDirParent = deleted->parentDir;
+  computer->currentDirectory = curr;
+  deletedDirParent->childrenDir.erase(
+    std::remove_if(
+        deletedDirParent->childrenDir.begin(),
+        deletedDirParent->childrenDir.end(),
+        [&deleted](const std::shared_ptr<MyDirectory>& dir) {
+            return dir == deleted;
+        }
+    ),
+    deletedDirParent->childrenDir.end()
+);
+  return rmdirLoop(flags, arguments, computer, ++idx, argsize);
+}
+
+string rmdir(vector<string> flags, vector<string> arguments,
+          shared_ptr<Computer> computer, shared_ptr<Command> command) {
+            if(arguments.empty()){
+              updateErrorMessage("Not directory given");
+              return "";
+            }
+            return rmdirLoop( flags, arguments, computer, 0, arguments.size());
+          }
+
 string ls(vector<string> flags, vector<string> arguments,
           shared_ptr<Computer> computer, shared_ptr<Command> command) {
   shared_ptr<MyDirectory> listedDir;
@@ -530,6 +496,48 @@ string ls(vector<string> flags, vector<string> arguments,
   return result;
 }
 
+enum class fileModyfications{
+  APPEND,
+  OWRITE
+};
+
+string fileMod(fileModyfications mod, shared_ptr<Computer> computer, string givenFileName, string content){
+  string fileName = givenFileName;
+  shared_ptr<MyDirectory> fileLocalization = computer->currentDirectory;
+  vector<string> cutPath = pathSplitLast(fileName);
+  if(!cutPath.empty()){
+    shared_ptr<MyDirectory> pomDir = computer->currentDirectory;
+    cd({}, {cutPath[0]}, computer, nullptr);
+    fileLocalization = computer->currentDirectory;
+    fileName = cutPath[1];
+    computer->currentDirectory = pomDir;
+  }
+  shared_ptr<File> showedFile = fileLocalization->findChildFil(fileName);
+  if(showedFile == nullptr){
+    /*
+      Wykorzystujemy funkcję touch, ale optymalizujemy działanie.
+      1. Zmuszamy computer do ustawienia katalogu na lokalizację pliku, a obecny zapamiętujemy
+      2. Wywołujemy touch z samą nazwą pliku, bez ścieżki (to skróci czas na dotarcie do lokalizacji)
+      3. Przywracamy computerowi poprzedni katalog
+    */
+    shared_ptr<MyDirectory> pomDir = computer->currentDirectory;
+    computer->currentDirectory = fileLocalization;
+    touch({}, {fileName}, 
+      computer, nullptr);
+    computer->currentDirectory = pomDir;
+    int newFilePosition = fileLocalization->childrenFil.size() - 1;
+    showedFile = fileLocalization->childrenFil[newFilePosition];
+  }
+  switch (mod){
+    case fileModyfications::APPEND:
+      showedFile->appendContent(content);
+    case fileModyfications::OWRITE:
+      showedFile->setContent(content);
+    default:
+      break;
+  }
+  return "";
+}
 class Interpreter {
 public:
   shared_ptr<Parser> parser;
@@ -553,6 +561,10 @@ public:
         "mkdir", "creating directories. Usage mkdir [dir1] [dir2] ...", map<string, SafetyStatus>{}, mkdir);
     availableCommands["touch"] = make_shared<Command>(
         "touch", "creating files. Usage touch [file1] [file2] ...", map<string, SafetyStatus>{}, touch);
+    availableCommands["cat"] = make_shared<Command>(
+        "cat", "showing file content. Usage cat [file] ...", map<string, SafetyStatus>{}, cat);
+    availableCommands["rmdir"] = make_shared<Command>(
+        "rmdir", "removing EMPTY!!! directories. Usage rmdir [file] ...", map<string, SafetyStatus>{}, rmdir);
     this->computer = computer;
     this->lexer = make_shared<Lexer>();
     this->parser = make_shared<Parser>();
@@ -591,7 +603,7 @@ public:
     if(cmdLine == nullptr){
         cerr<<"Nullptr during evaluation\n";
         updateErrorMessage("Parser failed");
-        return clearErrorMessage();
+        return "";
     }
     switch (cmdLine->type) {
     case NodeType::Command:
@@ -615,12 +627,24 @@ public:
         return evalFromAst(pipe->right, pipeStack);
       }
     }
+    case NodeType::Append: {
+      if (auto *append = std::get_if<appendStruct>(&cmdLine->value)) {
+        string newContent = evalFromAst(append->toDo, pipeStack);
+        return fileMod(fileModyfications::APPEND, this->computer, append->filename, newContent);
+      }
+    }
+    case NodeType::Overwrite: {
+      if (auto *ow = std::get_if<overwriteStruct>(&cmdLine->value)) {
+        string newContent = evalFromAst(ow->toDo, pipeStack);
+        return fileMod(fileModyfications::APPEND, this->computer, ow->filename, newContent);
+      }
+    }
     default:
       cerr << "Yet not implemented...\n";
-      return clearErrorMessage();
+      return "";
     }
   }
-  string eval(string input) { return evalFromAst(syntaxConverting(input), {}); }
+  string eval(string input) { return (errorOccured ? clearErrorMessage() : "") + evalFromAst(syntaxConverting(input), {}); }
 };
 
 string Interpreter::evalArg(Ast potArg) {
@@ -663,12 +687,19 @@ public:
 
 private:
   void bashSession() {
-    cout << RED << this->computer->giveCurrentUserName() << MAGENTA << "@" << GREEN
-         << computer->cmpname + " " << YELLOW
-         << ((computer->currentDirectory == computer->userDirectory)
-                 ? "~"
-                 : computer->currentDirectory->giveObjName())
-         << RESET << " $ ";
+    cout
+        << this->computer->currentUser->getUsrColor()
+        << this->computer->giveCurrentUserName()
+        << this->computer->currentUser->getMnkColor() << "@"
+        << this->computer->currentUser->getCmpColor() << computer->cmpname + " "
+        << YELLOW
+        << ((computer->currentDirectory == computer->userDirectory)
+                ? "~" // uwaga nie wprowadzam na razie obsługi katalogu w
+                      // zależności od użytkownika - ale da się to łatwo
+                      // zmienić. Wystarczy przypisać użytkownikowi katalog
+                      // domowy i dodać metodę setHomeDirectory() do klasy User.
+                : computer->currentDirectory->giveObjName())
+        << RESET << " " + computer->currentUser->getPromtChar() + " ";
     string n;
     getline(cin, n);
     if (n == "end") {
@@ -685,6 +716,7 @@ private:
 map<string, shared_ptr<Command>> Interpreter::availableCommands = {};
 //vector<shared_ptr<MyDirectory>> Computer::allDirectories = {};
 //vector<shared_ptr<MyDirectory>> Computer::allFiles = {};
+vector<Usr> Computer::allUsers = {};
 
 int main(void) {
 

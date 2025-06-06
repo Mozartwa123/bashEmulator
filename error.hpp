@@ -4,6 +4,7 @@
 #define ERROR_H
 
 extern std::string globalErrorMessage;
+extern bool errorOccured;
 
 #endif
 
