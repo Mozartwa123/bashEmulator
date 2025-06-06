@@ -7,12 +7,16 @@ bashEmulator jest programem konsolowym naśladującym działanie linuxowego term
 ## Co udało się zaimplementować
 
 ✓ Tworzenie katalogów i plików i przechodzenie pomiędzy nimi
+
 ✓ Bardzo podstawową obsługę użytkowników ograniczoną do zmiany pomiędzy aktualnym użytkownikiem a rootem
+
 
 ## Czego nie udało się zaimplementować
 
 ✘ Skaner bezpieczeństwa skryptów (poza rm -r / nie ma nic niebezpiecznego)
+
 ✘ GUI - które nadałoby większy sens tej inicjatywie (zabrakło czasu i chęci)
+
 ✘ hucznie zapowiadanej komendy dd
 
 ## Szczegóły implementacji i jej wady
@@ -53,26 +57,42 @@ Niestety obecna implementacja przyjmuje za koniec komendy znak nowego wiersza, a
 Zaimplementowanych jest 12 komend:
 
 "cd" -> przechodzenie do katalogów - nie posiada żadnych flag, ale logika przetwarzania argumentów jest bardzo podobna do tego co w bashu, w szczególności napisy cd /, cd /etc, cd username/documents w katalogu home oraz cd ~/documents są poprawne i poprawnie wykonywane
+
 "touch" -> tworzenie plików bez flag.
+
 "pwd" -> wyświetla ścieżkę obecnego katalogu
+
 "fastfetch" -> to jest rodzaj żartu. Wyświetla logo ascii (z pliku załączonego do projektu ascii_logo.txt) i mało poważne informacje o systemie, anaoliczne do znanych z neofetcha, fastfetcha, hyfetcha, itp.
+
 "ls" -> wyświetla zawartość katalogu. Dostępne są 2 flagi, które można łączyć:
+
     -a -> wyświetla ukryte katalogi (zaczynające się od kropki)
+
     -R -> wyświetla katalogi rekurencyjnie
+
 "clear" -> czyści konsolę.
+
 "mkdir" -> tworzy katalog - niestety nie ma flag
+
 "cat" -> wyświetla zawartość pliku
+
 "rmdir" -> usuwa pusty katalog
-"su" -> zmienia użytkownika, ale tylko pomiędzy root42, a użytkownikiem utworzonym na początku programu. Ponadto nie ma jeszcze obsługi haseł.
+
+"su" -> zmienia użytkownika, ale tylko pomiędzy root42, a użytkownikiem utworzonym na początku programu. 
+Ponadto nie ma jeszcze obsługi haseł.
 "rm" -> usuwa plik. Flaga -r usuwa rekurencyjnie foldery. Są zachowane restrykcje z uprawnieniami. Działania rm -r / nie będę zdradzał, ale na szczęście nie powoduje segfaultów.
+
 "echo" -> wypisuje na ekran podaną treść. Niestety nie zaimplementowałem żadnych ograniczników i ich logiki do lexera, przez co echo może wypisać tylko jedno słowo
 
 Ponadto:
 
 Komenda > plik powoduje nadpisanie zawartości pliku. Jeżeli plik nie istnieje zostanie utworzony.
+
 Komenda >> plik powoduje dopisanie linijki będącej wynikiem działania komendy.
+
 Komenda1 | Komenda2 powoduje, że wynik pierwszej komendy zostanie przekazany drugiej jako ostatni argument (potok)
 Komenda1 && Komenda2 wykonuje po sobie 2 polecenia, z powodu drobnych nieznajomości linuxa działa to tak samo jak średnik (który nie został zaimplemntowany), czyli nie przejmuje się błędami. W bashu jeżeli Komenda1 jest błędna, to druga nie jest już wykonywana.
+
 Flaga --help dopisana do dowolnej komendy wypisze instrukcje użytkowania (niestety większość jest niekomplenta). Jest to obsługiwane na poziomie interpretera.
 
 Tworzona też jest podstawowa struktura katalogów (bez plików niestety), np. /etc, /var, /sys, /dev, /lib itp.
@@ -88,24 +108,24 @@ sudo apt install build-essential (na dystrybucjach opartych o Debian)
 
 sudo pacman -S base-devel (na dystrybucjach opartych o Arch linux)
 
-Fedory nie pamiętam. Nigdy z niej nie korzystałem...
+sudo dnf groupinstall "Development Tools" (na fedorze, chyba...)
 
 Projekt posiada skrypt go kompilujący za pomocą g++ bez żadnych flag (głupota z mojej strony). Kompilacja trwa mniej niż 10 sekund (na 15 letnim komputerze). Więc wystarczy wpisać:
 
-chmod +x compile.sh
-./compile.sh
+    chmod +x compile.sh
+    ./compile.sh
 
 Następnie:
 
-./bashem
+    ./bashem
 
 Ewentualnie można jeszcze dodać ścieżkę w .bashrc:
 
-alias bashem='/lokalizacja/repozytorium/bashem/'
+    alias bashem='/lokalizacja/repozytorium/bashem/'
 
 Następnie:
 
-source ~/.bashrc
+    source ~/.bashrc
 
 Albo ponownie uruchomić terminal.
 
@@ -113,39 +133,39 @@ Albo ponownie uruchomić terminal.
 
 Nie różni się wiele od klasycznego terminala. Na początku zostaniemy poproszeni o podanie nazw użytkownika i komputera, a potem można rozpocząć sesję. Kończymy ją wpisując end jak komendę, a potem klikając enter. Są jeszcze inne sposoby, których nie będę prezentował, ale podpowiem, że się przewinęły. O to przykładowa sesja:
 
-mozartwa123@salamandra m1bashScriptScannerCpp $ ./bashem 
-WELCOME TO BASH EMULATOR
-How would you like to name your linux machine?
-salamandra
-How would you like to name yourself?
-mozartwa123
-mozartwa123@salamandra ~ $ ls
-lsis command
+    mozartwa123@salamandra m1bashScriptScannerCpp $ ./bashem 
+    WELCOME TO BASH EMULATOR
+    How would you like to name your linux machine?
+    salamandra
+    How would you like to name yourself?
+    mozartwa123
+    mozartwa123@salamandra ~ $ ls
+    lsis command
 
-documents	
+    documents	
 
-mozartwa123@salamandra ~ $ mkdir newDir
-mkdiris command
-newDiris argument
-mozartwa123@salamandra ~ $ ls
-lsis command
+    mozartwa123@salamandra ~ $ mkdir newDir
+    mkdiris command
+    newDiris argument
+    mozartwa123@salamandra ~ $ ls
+    lsis command
 
-documents	newDir	
+    documents	newDir	
 
-mozartwa123@salamandra ~ $ echo Hello_World > file
-echois command
-Hello_Worldis argument
->is Overwrite
-fileis argument
-mozartwa123mozartwa123@salamandra ~ $ ls
-lsis command
+    mozartwa123@salamandra ~ $ echo Hello_World > file
+    echois command
+    Hello_Worldis argument
+    >is Overwrite
+    fileis argument
+    mozartwa123mozartwa123@salamandra ~ $ ls
+    lsis command
 
-file	documents	newDir	
+    file	documents	newDir	
 
-mozartwa123@salamandra ~ $ cat file
-catis command
-fileis argument
-Hello_Worldmozartwa123@salamandra ~ $ end
-mozartwa123@salamandra m1bashScriptScannerCpp $ 
+    mozartwa123@salamandra ~ $ cat file
+    catis command
+    fileis argument
+    Hello_Worldmozartwa123@salamandra ~ $ end
+    mozartwa123@salamandra m1bashScriptScannerCpp $ 
 
 Jak widać jest niestety dużo logów, ale nie będę ich usuwał. Może to pomóc w raportowaniu błędów.
