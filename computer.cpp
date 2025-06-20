@@ -461,14 +461,20 @@ string rmdirLoop(vector<string> flags, vector<string> arguments,
     return "";
   }
   shared_ptr<MyDirectory> curr = computer->currentDirectory;
+  cd({}, {arguments[idx]}, computer, nullptr);
   shared_ptr<MyDirectory> deleted = computer->currentDirectory;
   shared_ptr<MyDirectory> deletedDirParent = deleted->parentDir;
   computer->currentDirectory = curr;
-  cd({}, {arguments[idx]}, computer, nullptr);
   if(errorOccured){
     return rmdirLoop(flags, arguments, computer, ++idx, argsize); //powiedzmy, że błędami się nie przejmujemy...
   }
   if(!deleted->childrenDir.empty()){
+    /*for(Dir dir : deleted->childrenDir){
+      dir->giveObjName();
+    }
+    for(Fil fil : deleted->childrenFil){
+      fil->giveObjName();
+    }*/
     updateErrorMessage("If you want to destroy your data next time type rm -rf...");
     return "";
   }
@@ -666,8 +672,10 @@ string fileMod(fileModyfications mod, shared_ptr<Computer> computer, string give
   switch (mod){
     case fileModyfications::APPEND:
       showedFile->appendContent(content);
+      break; // ale okropny błąd!!!
     case fileModyfications::OWRITE:
       showedFile->setContent(content);
+      break;
     default:
       break;
   }
@@ -777,7 +785,7 @@ public:
     case NodeType::Overwrite: {
       if (auto *ow = std::get_if<overwriteStruct>(&cmdLine->value)) {
         string newContent = evalFromAst(ow->toDo, pipeStack);
-        return fileMod(fileModyfications::APPEND, this->computer, ow->filename, newContent);
+        return fileMod(fileModyfications::OWRITE, this->computer, ow->filename, newContent);
       }
     }
     default:

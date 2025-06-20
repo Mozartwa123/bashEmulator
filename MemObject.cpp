@@ -3,7 +3,6 @@
 #include "User.hpp"
 #include <memory>
 #include <string>
-#include <iostream>
 
 std::string MemObject::giveObjName() { return this->objname; }
 std::string MemObject::giveAuthor() { return this->author->giveUserName(); }
